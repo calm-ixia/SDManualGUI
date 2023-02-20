@@ -22,13 +22,22 @@ GUIとソースの不器用さには目をつぶってください。
 3. モデル読み込み完了後、画像生成が可能になります。タブを切り替えて画像生成を設定してください
 4. Generateボタンで画像生成が開始されます。画像表示後、保存したい画像を右クリックで保存してください（ブラウザの機能）
 
-runwayml-v1.5モデルの使用に際しては、あらかじめHugging Faceへのユーザ登録と利用同意を行い、かつ起動時にHugging Face へのログインが必要です（ノートブックを参照のこと）
+- runwayml-v1.5モデルの使用に際しては、あらかじめHugging Faceへのユーザ登録と利用同意を行い、かつ起動時にHugging Face へのログインが必要です（ノートブックを参照のこと）
+- Extrasタブの機能を使う時はライブラリを導入するセルを別途実行してください。（Real-ESRGAN, MiDaS）
 
 ## 細かな機能
 - サムネイル : 右側のサムネイル画像にも生成パラメータを埋め込んでいます。パラメータ検討時の記録代わりに使えます
 - 割り当てられたGPUの確認 : ノートブックのセルで、Colabから割り当てられたGPUを確認できます
 
-## 変更点(2023-02-07)
+## 変更点
+### 2023-02-18
+- （ノートブックのタイトルのみ変更）img2txtなど各機能の画面を差す語をペインからタブに変更。※現状のGUI実装に合わせた
+- Extrasタブを追加
+- Extrasタブに高解像度化機能を追加（Real-ESRGANを使用） ※ライブラリを呼び出す最低限のインタフェースだけ実装。ファイルの出入力は手動
+- Extrasタブに深度推定機能を追加（MiDaSを使用） ※同上
+- 機能追加に合わせてReadmeを追記・修正
+
+### 2023-02-07
 - 使用ライブラリの名前をunstable_diffusionからlayered_diffusionにリネーム
 - pipeline切り替え：Layered DiffusionとLPW Pipelineの使用を切り替え
 - Layered Diffusionを使用してimg2imgする時の、Denoising strengthの適用方法を変更。readmeの画像も変更
@@ -48,9 +57,9 @@ runwayml-v1.5モデルの使用に際しては、あらかじめHugging Faceへ�
 ## 未実装の機能
 本家を使用してください。
 - outpainting
-- 高解像度化 関連
+- 高解像度化 関連（最低限の機能は本GUIでも可）
 - Restore faces 関連
-- Depth2Img 関連
+- Depth2Img 関連（デプスマップの生成は本GUIでも可）
 - スクリプト
 - モデル学習・適応
 - xformers 対応
@@ -174,6 +183,71 @@ inpaintでもDenoising strengthは有効ですが、Layered DiffusionとLPW Pipe
 - send to txt2img / img2img / inpaint : 生成パラメータ情報を各タブに送る
 - enable edit：パラメータ情報のテキスト編集を有効にする ＜send to ** や save ** のボタンで編集後の情報を各タブや画像に反映できる＞
 - save image / thumbnail：パラメータ情報を表示中の画像／サムネイルに保存する ＜ダウンロードは別途右クリック＞
+
+----
+### Extras
+Stable Diffusion以外のライブラリを主に使用する機能を追加。
+- HighRes：高解像度化機能。Real-ESRGANを呼び出す。
+- DepthMap：深度推定（画像のデプスマップ生成）。MiDaSを呼び出す。
+
+#### HighRes
+![RealESRGAN](https://user-images.githubusercontent.com/118874552/219989153-1997b98d-42fc-46db-b609-73f3ba8ccfc3.png)
+入力画像を高解像度化した画像を生成する。詳細は![Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)のリンクを参照。本GUIではライブラリを呼び出す最低限のインタフェースだけ実装
+
+- model：処理に使うモデルを指定
+- scale：拡大率を指定。最大4.0倍
+- face enhance：顔の強調を行う
+- generate ボタン：高解像度化画像を生成
+
+実行の手順は以下の通り。ファイルの出入力は手動
+
+0. 実行前にReal-ESRGANのインストールを行う。GUIの上の方にある「高解像度化ライブラリReal-ESRGANの導入」のセルを実行。
+1. Real-ESRGAN/Uploadディレクトリに、高解像度化したい画像をアップロードする。
+  - ノートブックの左端のファイル画面にあるReal-ESRGAN/Uploadディレクトリを開く。
+  - Real-ESRGAN/Uploadディレクトリに、画像ファイルをドラッグアンドドロップする。
+2. モデル指定などの設定を行い、generate ボタンを実行すると高解像度化処理が実行される。
+3. Real-ESRGAN/Resultsディレクトリから、処理結果のファイルをダウンロードする。
+  - ノートブックの左端のファイル画面にあるReal-ESRGAN/Resultsディレクトリを開く。
+  - Real-ESRGAN/Resultsディレクトリにある画像ファイルを右クリックし、「ダウンロード」を選択する。
+
+※ 現状、ディレクトリの一括ダウンロードは未対応。また複数ファイルを選択して「ダウンロード」すると、2枚目以降のダウンロードをブロックされる。
+
+以下のオプションは未対応。設定値を記載。
+- dni_weight = None
+- denoise_strength = 1
+- tile = 0
+- tile_pad = 10
+- pre_pad = 0
+- half = True #fp16
+- gpu_id=None
+- suffix = 'out' #出力ファイル名の末尾につける文字列。 foobar_{suffix}.{ext} のようなファイル名になる
+- ext = 'auto' # 出力ファイルの拡張子
+
+#### DepthMap
+![MiDaS](https://user-images.githubusercontent.com/118874552/219989161-b0c1aa74-8d54-4e5e-a39d-d325d757bc36.png)
+入力画像の深度推定を行い、デプスマップ画像を生成する。詳細は![MiDaS](https://github.com/isl-org/MiDaS)のリンクを参照。本GUIではライブラリを呼び出す最低限のインタフェースだけ実装
+
+- model：処理に使うモデルを指定。本GUIでは dpt_swin_large_384 を初期値に設定。なおライブラリのデフォルトは dpt_beit_large_512
+- generate ボタン：デプスマップを生成。
+
+実行の手順は以下の通り。ファイルの出入力は手動
+
+0. 実行前にMiDaSのインストールを行う。GUIの上の方にある「深度推定ライブラリMiDaSの導入」のセルを実行。
+1. MiDaS/Input ディレクトリに、高解像度化したい画像をアップロードする。
+  - ノートブックの左端のファイル画面にあるMiDaS/Input ディレクトリを開く。
+  - MiDaS/Input ディレクトリに、画像ファイルをドラッグアンドドロップする。
+2. モデル指定などの設定を行い、generate ボタンを実行すると高解像度化処理が実行される。
+3. MiDaS/Output ディレクトリから、処理結果のファイルをダウンロードする。
+  - ノートブックの左端のファイル画面にあるMiDaS/Output ディレクトリを開く。
+  - MiDaS/Output ディレクトリにある画像ファイルを右クリックし、「ダウンロード」を選択する。
+
+※ 現状、ディレクトリの一括ダウンロードは未対応。また複数ファイルを選択して「ダウンロード」すると、2枚目以降のダウンロードをブロックされる。
+
+以下のオプションは未対応。設定値を記載。
+- optimize = None #fp32
+- height = None
+- square = True
+- grayscale = True
 
 ----
 ## PNG Info 単品
