@@ -29,7 +29,12 @@ GUIとソースの不器用さには目をつぶってください。
 - サムネイル : 右側のサムネイル画像にも生成パラメータを埋め込んでいます。パラメータ検討時の記録代わりに使えます
 - 割り当てられたGPUの確認 : ノートブックのセルで、Colabから割り当てられたGPUを確認できます
 
+----
 ## 変更点
+### 2023-02-21
+- Extrasタブの各機能にファイルの出入力機能を追加。Colabのアップロード・ダウンロードAPIを使用
+- 機能追加に合わせてReadmeを追記・修正
+
 ### 2023-02-18
 - （ノートブックのタイトルのみ変更）img2txtなど各機能の画面を差す語をペインからタブに変更。※現状のGUI実装に合わせた
 - Extrasタブを追加
@@ -186,31 +191,43 @@ inpaintでもDenoising strengthは有効ですが、Layered DiffusionとLPW Pipe
 
 ----
 ### Extras
-Stable Diffusion以外のライブラリを主に使用する機能を追加。
-- HighRes：高解像度化機能。Real-ESRGANを呼び出す。
-- DepthMap：深度推定（画像のデプスマップ生成）。MiDaSを呼び出す。
+Stable Diffusion以外のライブラリを主に使用する機能を追加。本GUIではライブラリを呼び出す最低限のインタフェースだけ実装
+- HighRes：高解像度化機能。Real-ESRGANを呼び出す
+- DepthMap：深度推定（画像のデプスマップ生成）。MiDaSを呼び出す
+
+#### 共通のGUI
+![HighRes01](https://user-images.githubusercontent.com/118874552/220279165-aa69a73a-9011-47c6-8973-b1d9f271378c.png)
+- upload images：入力ファイルをアップロードする。Colabのポップアップが右のコンソールに出る
+- Output files before generating：画像生成前に前回の出力ファイルを消すかどうか。keepで残し、removeで削除。＜別フォルダのファイルを処理後、最後にまとめてダウンロードしたい場合はkeepしておくとよい＞
+- Input files after generating：画像生成した後に入力ファイルを消すかどうか。keepで残し、removeで削除。＜同じ入力ファイルを別設定で処理したい場合はkeepしておくとよい＞
+- param：処理ごとの設定
+- generate ボタン：画像を生成する
+- download zip ボタン：出力ファイルをzipファイルにまとめてダウンロードする
+- 進捗状況のコンソール（右側） : 進捗状況を表示
+
+※ 出力ファイルをzipファイル1個にまとめるのはColabのダウンロード制限の仕様のため
+ 
+#### 実行のおおまかな流れ
+- 実行前にライブラリをインストールする。GUIの上の方にある「高解像度化ライブラリReal-ESRGANの導入」や「深度推定ライブラリMiDaSの導入」のセルを実行
+- 入力ファイルをアップロードする
+  - upload images ボタンを押すと、右のコンソールにColabの「ファイル選択」ボタンが現れる
+  - 現れたファイル選択ボタンを押すと、ファイル選択ダイアログが出るので、アップロードするファイルを選択する
+    - 1フォルダ内の複数ファイルを選択できる
+    - 複数フォルダのファイルを選択したい場合は、フォルダごとに都度uploadを行うとファイルを追加できる
+- モデル指定などの設定を行い generate ボタンを押すと、処理画像が生成される
+- download zip ボタンを押すと、出力ファイルがzipファイルとして一括ダウンロードされる
+
+※ アップロード後右のコンソールにメッセージが出るが、セルの再起動は不要。そのまま別のファイルを続けてアップロードしたり、generateで画像生成できる
+
 
 #### HighRes
-![RealESRGAN](https://user-images.githubusercontent.com/118874552/219989153-1997b98d-42fc-46db-b609-73f3ba8ccfc3.png)
-入力画像を高解像度化した画像を生成する。詳細は![Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)のリンクを参照。本GUIではライブラリを呼び出す最低限のインタフェースだけ実装
+![HighRes_complete](https://user-images.githubusercontent.com/118874552/220275726-ea094df9-9ed3-45ad-9a9d-aed0628b56a1.png)
+
+入力画像を高解像度化した画像を生成する。詳細は![Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)のリンクを参照
 
 - model：処理に使うモデルを指定
 - scale：拡大率を指定。最大4.0倍
 - face enhance：顔の強調を行う
-- generate ボタン：高解像度化画像を生成
-
-実行の手順は以下の通り。ファイルの出入力は手動
-
-0. 実行前にReal-ESRGANのインストールを行う。GUIの上の方にある「高解像度化ライブラリReal-ESRGANの導入」のセルを実行。
-1. Real-ESRGAN/Uploadディレクトリに、高解像度化したい画像をアップロードする。
-  - ノートブックの左端のファイル画面にあるReal-ESRGAN/Uploadディレクトリを開く。
-  - Real-ESRGAN/Uploadディレクトリに、画像ファイルをドラッグアンドドロップする。
-2. モデル指定などの設定を行い、generate ボタンを実行すると高解像度化処理が実行される。
-3. Real-ESRGAN/Resultsディレクトリから、処理結果のファイルをダウンロードする。
-  - ノートブックの左端のファイル画面にあるReal-ESRGAN/Resultsディレクトリを開く。
-  - Real-ESRGAN/Resultsディレクトリにある画像ファイルを右クリックし、「ダウンロード」を選択する。
-
-※ 現状、ディレクトリの一括ダウンロードは未対応。また複数ファイルを選択して「ダウンロード」すると、2枚目以降のダウンロードをブロックされる。
 
 以下のオプションは未対応。設定値を記載。
 - dni_weight = None
@@ -224,30 +241,20 @@ Stable Diffusion以外のライブラリを主に使用する機能を追加。
 - ext = 'auto' # 出力ファイルの拡張子
 
 #### DepthMap
-![MiDaS](https://user-images.githubusercontent.com/118874552/219989161-b0c1aa74-8d54-4e5e-a39d-d325d757bc36.png)
-入力画像の深度推定を行い、デプスマップ画像を生成する。詳細は![MiDaS](https://github.com/isl-org/MiDaS)のリンクを参照。本GUIではライブラリを呼び出す最低限のインタフェースだけ実装
+
+![DepthMap_complete](https://user-images.githubusercontent.com/118874552/220278958-ac98b7bc-561e-4d08-9e34-eeeb800e652d.png)
+
+入力画像の深度推定を行い、デプスマップ画像を生成する。詳細は![MiDaS](https://github.com/isl-org/MiDaS)のリンクを参照
 
 - model：処理に使うモデルを指定。本GUIでは dpt_swin_large_384 を初期値に設定。なおライブラリのデフォルトは dpt_beit_large_512
-- generate ボタン：デプスマップを生成。
-
-実行の手順は以下の通り。ファイルの出入力は手動
-
-0. 実行前にMiDaSのインストールを行う。GUIの上の方にある「深度推定ライブラリMiDaSの導入」のセルを実行。
-1. MiDaS/Input ディレクトリに、高解像度化したい画像をアップロードする。
-  - ノートブックの左端のファイル画面にあるMiDaS/Input ディレクトリを開く。
-  - MiDaS/Input ディレクトリに、画像ファイルをドラッグアンドドロップする。
-2. モデル指定などの設定を行い、generate ボタンを実行すると高解像度化処理が実行される。
-3. MiDaS/Output ディレクトリから、処理結果のファイルをダウンロードする。
-  - ノートブックの左端のファイル画面にあるMiDaS/Output ディレクトリを開く。
-  - MiDaS/Output ディレクトリにある画像ファイルを右クリックし、「ダウンロード」を選択する。
-
-※ 現状、ディレクトリの一括ダウンロードは未対応。また複数ファイルを選択して「ダウンロード」すると、2枚目以降のダウンロードをブロックされる。
 
 以下のオプションは未対応。設定値を記載。
 - optimize = None #fp32
 - height = None
 - square = True
 - grayscale = True
+
+※ 初回の実行では上の画像の通りWarningが出るが、正常に画像生成される。2回目以降Warningは出ない
 
 ----
 ## PNG Info 単品
