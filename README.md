@@ -31,6 +31,10 @@ GUIとソースの不器用さには目をつぶってください。
 
 ----
 ## 変更点
+### 2023-05-10
+- Layered Diffusionへの依存を分離した
+- ExtrasタブにてLayered Diffusionを実行できるようにした
+
 ### 2023-02-21
 - Extrasタブの各機能にファイルの出入力機能を追加。Colabのアップロード・ダウンロードAPIを使用
 - 機能追加に合わせてReadmeを追記・修正
@@ -67,7 +71,7 @@ GUIとソースの不器用さには目をつぶってください。
 - Depth2Img 関連（デプスマップの生成は本GUIでも可）
 - スクリプト
 - モデル学習・適応
-- xformers 対応
+- xformers 対応（Layered Diffusionが対応）
 - PNGファイルへのモデルハッシュ値の保存
 - Shift+EnterでGenerate実行
 
@@ -192,11 +196,12 @@ inpaintでもDenoising strengthは有効ですが、Layered DiffusionとLPW Pipe
 ----
 ### Extras
 Stable Diffusion以外のライブラリを主に使用する機能を追加。本GUIではライブラリを呼び出す最低限のインタフェースだけ実装
-- HighRes：高解像度化機能。Real-ESRGANを呼び出す
-- DepthMap：深度推定（画像のデプスマップ生成）。MiDaSを呼び出す
+- [HighRes](#highres)：高解像度化機能。Real-ESRGANを呼び出す
+- [DepthMap](#depthmap)：深度推定（画像のデプスマップ生成）。MiDaSを呼び出す
+- [Layered Diffusion](#layered-diffusion)：七師 氏が実装した画像生成ライブラリを呼び出す。背景と人物とで別のプロンプトを指定可能など多機能
 
 #### 共通のGUI
-![HighRes01](https://user-images.githubusercontent.com/118874552/220279165-aa69a73a-9011-47c6-8973-b1d9f271378c.png)
+![HighRes01](https://github.com/calm-ixia/SDManualGUI/assets/118874552/2c41180e-5915-4ca5-89bb-44ea017577fb)
 - upload images：入力ファイルをアップロードする。Colabのポップアップが右のコンソールに出る
 - Output files before generating：画像生成前に前回の出力ファイルを消すかどうか。keepで残し、removeで削除。＜別フォルダのファイルを処理後、最後にまとめてダウンロードしたい場合はkeepしておくとよい＞
 - Input files after generating：画像生成した後に入力ファイルを消すかどうか。keepで残し、removeで削除。＜同じ入力ファイルを別設定で処理したい場合はkeepしておくとよい＞
@@ -256,6 +261,34 @@ Stable Diffusion以外のライブラリを主に使用する機能を追加。�
 
 ※ 初回の実行では上の画像の通りWarningが出るが、正常に画像生成される。2回目以降Warningは出ない
 
+#### Layered Diffusion
+![Extras_Layered_result](https://github.com/calm-ixia/SDManualGUI/assets/118874552/bd2f5486-88e7-42fa-8890-d3b4277af09d)
+
+七師氏が実装した画像生成ライブラリ Layered Diffusion を呼び出す。Diffusersベースで、背景と人物とで別のプロンプトを指定できる、などの機能がある。
+CUIやGUIはなく、pythonスクリプトを書いて実行する。
+
+- initialization code：Pipeline生成などの初期設定を行うコードを記述する。
+- initialize：上記の初期設定コードを実行する
+- Layered Diffusion code：画像生成や表示・保存を行うコードを記述する。
+- generate：上記の生成処理を実行する
+
+注意：initialize, generateともexec()を呼び出すだけであり、**コードのサニタイズ及びバリデーションは行いません。ご自身の責任の元でコードを実行してください。**
+
+#### 実行のおおまかな流れ
+1. 初期設定のコードと画像生成用のコードを作成し、各テキストエリアに貼る。
+2. initializeを実行し、モデルをロードする。
+3. generateを実行し、画像を生成する。必要に応じてパラメータを書き換え、所望の画像を得る。
+4. download zipを押下し、画像ファイルをダウンロードする
+
+#### ワンポイント
+- initializeは一度だけ、generateは画像生成のたびに実行することを想定している。GUI画像に記載のコードを初期値として表示しているので、コードを書く時の雛型に。
+- Layered DiffusionのAPI仕様については以下を参照
+  - GitHubのReadmeとソースコード https://github.com/nanashi161382/unstable_diffusion/
+  - 七師氏のnote https://note.com/tomo161382
+- initialize内でパイプラインのインスタンスを保持できるようにコードを書く。例：self.pipeに代入する。GUI画像に記載のコードを参照。
+- 生成画像データとしてはPIL.Imageオブジェクトが得られる。保存などの後処理をする際に参考に。
+- 生成画像にプロンプトなどのパラメータ情報を埋め込みたい時は、画像を一旦ダウンロードした後、[PNG Info](#png-info)に画像をアップロードして情報を編集する
+ 
 ----
 ## PNG Info 単品
 ![PNG Info だけを切り出したノートブック](https://github.com/calm-ixia/SDManualGUI/blob/main/PNGInfo.ipynb) を別に作成しました。こちらはCPUのみで動作します。
@@ -293,10 +326,6 @@ Stable Diffusion以外のライブラリを主に使用する機能を追加。�
 
 ----
 ## 主な使用ライブラリ：
-- Layered Diffusion
-  - 七師 氏の作成
-  - 画像生成に使用。Diffusersベース
-  - https://github.com/nanashi161382/unstable_diffusion/
 - Long Prompt Weighting Stable Diffusion
   - SkyTNT 氏の作成
   - Text Embedding 生成に使用。Diffusersの公式community pipeline
@@ -321,6 +350,12 @@ Stable Diffusion以外のライブラリを主に使用する機能を追加。�
   - https://torch.classcat.com/2022/11/13/huggingface-blog-stable-diffusion/
 - AUTOMATIC1111 web UIの挙動
   - https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki
+- Real-ESRGAN
+  - https://github.com/xinntao/Real-ESRGAN
+- MiDaS
+  - https://github.com/isl-org/MiDaS
+- Layered Diffusion
+  - https://github.com/nanashi161382/unstable_diffusion/
 
 ## 謝辞
 - Stable Diffusion
@@ -333,3 +368,8 @@ Stable Diffusion以外のライブラリを主に使用する機能を追加。�
   - https://huggingface.co/AlanB/lpw_stable_diffusion_mod
 - Yasu Seno (TrinArt model)
   - https://huggingface.co/naclbit
+- SkyTNT
+  - https://github.com/SkyTNT
+- 七師
+  - https://note.com/tomo161382
+
