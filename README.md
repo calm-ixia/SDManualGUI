@@ -31,6 +31,11 @@ GUIとソースの不器用さには目をつぶってください。
 
 ----
 ## 変更点
+### 2024-09-29
+- 初回にシード指定してからgenerateする場合にエラーとなっていたバグを修正
+- lpw_stable_diffusionのpreprocess_image()とpreprocess_mask()の引数仕様変更の反映
+- 本更新をもって開発終了
+
 ### 2023-05-10
 - Layered Diffusionへの依存を分離した
 - ExtrasタブにてLayered Diffusionを実行できるようにした
